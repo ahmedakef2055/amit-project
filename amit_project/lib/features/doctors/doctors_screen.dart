@@ -23,24 +23,26 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
   }
 
   Future<void> loadDoctors() async {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final token = await auth.getToken();
+  final auth = Provider.of<AuthService>(context, listen: false);
+  final token = await auth.getToken();
 
-    print("📌 TOKEN FROM PROVIDER: $token");
+  print("📌 TOKEN FROM PROVIDER: $token");
 
-    if (token == null) {
-      print("❌ No token found");
-      setState(() => loading = false);
-      return;
-    }
-
-    final result = await DoctorService.getAllDoctors(token);
-
-    setState(() {
-      doctors = result;
-      loading = false;
-    });
+  if (token == null) {
+    print("❌ No token found");
+    setState(() => loading = false);
+    return;
   }
+
+  final result = await DoctorService.getAllDoctors();
+
+  setState(() {
+    doctors = result;
+    loading = false;
+  });
+}
+
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:amit_project/models/doctor.dart';
 import 'package:amit_project/features/doctors/doctor_service.dart';
-import '../features/auth/auth_service.dart';
 import 'doctor_detail_screen.dart';
 
 class RecommendationDoctorScreen extends StatefulWidget {
@@ -15,7 +13,10 @@ class RecommendationDoctorScreen extends StatefulWidget {
 
 class _RecommendationDoctorScreenState
     extends State<RecommendationDoctorScreen> {
-  Future<List<Doctor>>? futureDoctors; // <<< ✔️ بقت nullable
+  List<Doctor> allDoctors = [];
+  List<Doctor> filteredDoctors = [];
+
+  bool loading = true;
 
   @override
   void initState() {
@@ -24,13 +25,28 @@ class _RecommendationDoctorScreenState
   }
 
   void loadDoctors() async {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final token = await auth.getToken();
-
-    print("📌 TOKEN IN RECOMMENDATION: $token");
+    final result = await DoctorService.getAllDoctors();
 
     setState(() {
-      futureDoctors = DoctorService.getAllDoctors(token ?? "");
+      allDoctors = result;
+      filteredDoctors = result;
+      loading = false;
+    });
+  }
+
+  void searchDoctors(String query) {
+    query = query.toLowerCase();
+
+    setState(() {
+      filteredDoctors = allDoctors.where((doctor) {
+        final name = doctor.name.toLowerCase();
+        final specialization = doctor.specialization.toLowerCase();
+        final city = doctor.city.toLowerCase();
+
+        return name.contains(query) ||
+            specialization.contains(query) ||
+            city.contains(query);
+      }).toList();
     });
   }
 
@@ -38,6 +54,7 @@ class _RecommendationDoctorScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -52,62 +69,49 @@ class _RecommendationDoctorScreenState
         ],
       ),
 
-      body: Column(
-        children: [
-          // Search
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: "Search",
-                  border: InputBorder.none,
-                  icon: Icon(Icons.search, color: Colors.grey),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 15),
-
-          Expanded(
-            child: futureDoctors == null
-                ? const Center(child: CircularProgressIndicator()) // لسه بيجيب بيانات
-                : FutureBuilder<List<Doctor>>(
-                    future: futureDoctors,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                            child: CircularProgressIndicator());
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(child: Text("No doctors found"));
-                      }
-
-                      final doctors = snapshot.data!;
-
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: doctors.length,
-                        itemBuilder: (context, index) {
-                          final doctor = doctors[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _doctorItem(context, doctor),
-                          );
-                        },
-                      );
-                    },
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Search
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: TextField(
+                      onChanged: searchDoctors,
+                      decoration: const InputDecoration(
+                        hintText: "Search",
+                        border: InputBorder.none,
+                        icon: Icon(Icons.search, color: Colors.grey),
+                      ),
+                    ),
                   ),
-          ),
-        ],
-      ),
+                ),
+
+                const SizedBox(height: 15),
+
+                Expanded(
+                  child: filteredDoctors.isEmpty
+                      ? const Center(child: Text("No doctors found"))
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredDoctors.length,
+                          itemBuilder: (context, index) {
+                            final doctor = filteredDoctors[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _doctorItem(context, doctor),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -126,8 +130,7 @@ class _RecommendationDoctorScreenState
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.
-          all(color: Colors.black12),
+          border: Border.all(color: Colors.black12),
         ),
         child: Row(
           children: [
