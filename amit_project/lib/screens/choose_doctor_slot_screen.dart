@@ -41,7 +41,6 @@ class _ChooseDoctorSlotScreenState extends State<ChooseDoctorSlotScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // Doctor Info (Mocked - بدلها ببيانات الدكتور بتاعك لو حابب)
             Row(
               children: [
                 Container(
@@ -142,7 +141,6 @@ class _ChooseDoctorSlotScreenState extends State<ChooseDoctorSlotScreen> {
     );
   }
 
-  // Visit Type Widget
   Widget _visitTypeCard(String label, IconData icon) {
     bool active = selectedVisit == label;
 
@@ -175,10 +173,6 @@ class _ChooseDoctorSlotScreenState extends State<ChooseDoctorSlotScreen> {
     );
   }
 }
-
-// --------------------------------------
-// PAYMENT SCREEN PLACEHOLDER
-// --------------------------------------
 
 class PaymentScreen extends StatelessWidget {
   final DateTime date;

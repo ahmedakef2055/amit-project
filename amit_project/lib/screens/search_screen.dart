@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:amit_project/models/doctor.dart';
+import 'package:provider/provider.dart';
+import '../features/auth/auth_service.dart';
+import '../features/doctors/doctor_service.dart';
+import '../models/doctor.dart';
 import 'doctor_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -10,247 +13,160 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController searchController = TextEditingController();
+  List<dynamic> allDoctors = [];
+  List<dynamic> filteredDoctors = [];
+  List<dynamic> specializations = [];
+  List<dynamic> cities = [];
 
-  List<String> recentSearch = [
-    "Dental",
-    "General",
-    "Nearest Hospital",
-    "Neurologic"
-  ];
+  String searchQuery = '';
+  String? selectedSpecId;
+  String? selectedCityId;
+  String? token;
+  bool loading = true;
 
-  String selectedSpeciality = "All";
-
-  List<Doctor> results = [];
-
-  void onSearch(String text) {
-    setState(() {
-      results = results
-          .where((d) =>
-              d.name.toLowerCase().contains(text.toLowerCase()) ||
-              d.specialization.toLowerCase().contains(text.toLowerCase()))
-          .toList();
-    });
+  @override
+  void initState() {
+    super.initState();
+    _init();
   }
 
-  void openFilterSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (context) => _buildFilterSheet(),
-    );
+  Future<void> _init() async {
+    final auth = context.read<AuthService>();
+    token = await auth.getToken();
+
+    if (token == null) return;
+
+    allDoctors = await DoctorService.getAllDoctors(token!);
+    specializations = await DoctorService.getSpecializations(token!);
+    cities = await DoctorService.getCities(token!);
+
+    filteredDoctors = List.from(allDoctors);
+    setState(() => loading = false);
+  }
+
+  void applyFilters() {
+    filteredDoctors = allDoctors.where((doc) {
+      final name = doc["name"].toString().toLowerCase();
+
+      final matchName =
+          searchQuery.isEmpty || name.contains(searchQuery.toLowerCase());
+
+      final matchSpec = selectedSpecId == null ||
+          doc["specialization"]["id"].toString() == selectedSpecId;
+
+      final matchCity = selectedCityId == null ||
+          doc["city"]["id"].toString() == selectedCityId;
+
+      return matchName && matchSpec && matchCity;
+    }).toList();
+
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text("Search",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Search Doctors"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      color: Colors.grey.shade100,
-                    ),
-                    child: TextField(
-                      controller: searchController,
-                      onChanged: onSearch,
-                      decoration: const InputDecoration(
-                        hintText: "Search",
-                        border: InputBorder.none,
-                        icon: Icon(Icons.search),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                GestureDetector(
-                  onTap: openFilterSheet,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.filter_list),
-                  ),
-                )
-              ],
+            TextField(
+              onChanged: (v) {
+                searchQuery = v;
+                applyFilters();
+              },
+              decoration: const InputDecoration(
+                hintText: "Search by name",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
 
-            if (results.isEmpty) ...[
-              const Text("Recent Search",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: selectedSpecId,
+              hint: const Text("Select specialization"),
+              items: specializations.map((s) {
+                return DropdownMenuItem(
+                  value: s["id"].toString(),
+                  child: Text(s["name"]),
+                );
+              }).toList(),
+              onChanged: (v) {
+                selectedSpecId = v;
+                applyFilters();
+              },
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+            ),
 
-              for (var item in recentSearch)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(item),
-                    const Icon(Icons.close, size: 18),
-                  ],
-                ),
+            const SizedBox(height: 12),
 
-            ] else ...[
-              Text("${results.length} found",
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: selectedCityId,
+              hint: const Text("Select city"),
+              items: cities.map((c) {
+                return DropdownMenuItem(
+                  value: c["id"].toString(),
+                  child: Text(c["name"]),
+                );
+              }).toList(),
+              onChanged: (v) {
+                selectedCityId = v;
+                applyFilters();
+              },
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+            ),
 
-              Expanded(
-                child: ListView.builder(
-                  itemCount: results.length,
-                  itemBuilder: (context, index) {
-                    final doc = results[index];
+            const SizedBox(height: 16),
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => DoctorDetailScreen(doctor: doc)),
+            Expanded(
+              child: filteredDoctors.isEmpty
+                  ? const Center(child: Text("No doctors found"))
+                  : ListView.builder(
+                      itemCount: filteredDoctors.length,
+                      itemBuilder: (context, index) {
+                        final doc = filteredDoctors[index];
+                        return Card(
+                          child: ListTile(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DoctorDetailScreen(
+                                    doctor: Doctor.fromJson(doc),
+                                  ),
+                                ),
+                              );
+                            },
+                            leading: CircleAvatar(
+                              backgroundImage:
+                                  NetworkImage(doc["photo"]),
+                            ),
+                            title: Text(doc["name"]),
+                            subtitle: Text(
+                              "${doc["specialization"]["name"]} • ${doc["city"]["name"]}",
+                            ),
+                          ),
                         );
                       },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 14),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.black12),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              height: 70,
-                              width: 70,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(
-                                  image: doc.photo.startsWith('http')
-                                      ? NetworkImage(doc.photo)
-                                      : const AssetImage(
-                                          'assets/images/Frame.png')
-                                      as ImageProvider,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(doc.name,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  Text(doc.specialization,
-                                      style: const TextStyle(
-                                          color: Colors.black54)),
-                                  Text(doc.degree,
-                                      style: const TextStyle(
-                                          color: Colors.black45)),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ]
+                    ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilterSheet() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Filter",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const SizedBox(height: 16),
-
-          const Text("Speciality",
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          Wrap(
-            spacing: 10,
-            children: [
-              specialityChip("All"),
-              specialityChip("General"),
-              specialityChip("Neurologic"),
-              specialityChip("Pediatric"),
-              specialityChip("Dermatologist"),
-            ],
-          ),
-
-          const SizedBox(height: 30),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                onSearch(searchController.text);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff3FA2F7),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text("Apply Filter",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget specialityChip(String label) {
-    final bool isSelected = selectedSpeciality == label;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() => selectedSpeciality = label);
-      },
-      child: Chip(
-        label: Text(label),
-        backgroundColor:
-            isSelected ? const Color(0xff3FA2F7) : Colors.grey.shade200,
-        labelStyle:
-            TextStyle(color: isSelected ? Colors.white : Colors.black),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       ),
     );
   }

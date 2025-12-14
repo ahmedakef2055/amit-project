@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:amit_project/models/doctor.dart';
 import 'choose_date_screen.dart';
+import '../features/appointment/appointment_provider.dart';
 
 class DoctorDetailScreen extends StatelessWidget {
   final Doctor doctor;
 
   const DoctorDetailScreen({super.key, required this.doctor});
 
+  String safeText(String? value) {
+    return (value == null || value.isEmpty) ? "Not available" : value;
+  }
+
+  ImageProvider safeImage(String? url) {
+    if (url != null && url.startsWith("http")) {
+      return NetworkImage(url);
+    }
+    return const AssetImage("assets/images/Frame.png");
+  }
+
   void goToChooseDate(BuildContext context) {
+    context.read<AppointmentProvider>().setDoctor(doctor.id);
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChooseDateScreen(
-          doctorName: doctor.name,
-          visitType: "General",
-        ),
+        builder: (_) => const ChooseDateScreen(),
       ),
     );
   }
@@ -30,8 +42,7 @@ class DoctorDetailScreen extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            color: Colors.black,
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
@@ -50,11 +61,11 @@ class DoctorDetailScreen extends StatelessWidget {
 
         body: Column(
           children: [
-            TabBar(
-              labelColor: const Color(0xff3FA2F7),
+            const TabBar(
+              labelColor: Color(0xff3FA2F7),
               unselectedLabelColor: Colors.black54,
-              indicatorColor: const Color(0xff3FA2F7),
-              tabs: const [
+              indicatorColor: Color(0xff3FA2F7),
+              tabs: [
                 Tab(text: "About"),
                 Tab(text: "Location"),
                 Tab(text: "Reviews"),
@@ -64,13 +75,11 @@ class DoctorDetailScreen extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  // ------------------------- ABOUT TAB -------------------------
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header
                         Row(
                           children: [
                             Container(
@@ -79,7 +88,7 @@ class DoctorDetailScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 image: DecorationImage(
-                                  image: NetworkImage(doctor.photo),
+                                  image: safeImage(doctor.photo),
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -106,7 +115,7 @@ class DoctorDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    doctor.degree,
+                                    safeText(doctor.degree),
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: Colors.black45,
@@ -120,42 +129,52 @@ class DoctorDetailScreen extends StatelessWidget {
 
                         const SizedBox(height: 20),
 
-                        const Text("About Me",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text(
+                          "About Me",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Text(
-                          doctor.description,
+                          safeText(doctor.description),
                           style: const TextStyle(color: Colors.black54),
                         ),
 
                         const SizedBox(height: 20),
 
-                        const Text("Working Time",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Working Time",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 6),
                         Text(
-                          "${doctor.startTime} - ${doctor.endTime}",
+                          "${safeText(doctor.startTime)} - ${safeText(doctor.endTime)}",
                           style: const TextStyle(color: Colors.black54),
                         ),
 
                         const SizedBox(height: 20),
 
-                        const Text("Phone",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Phone",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 6),
                         Text(
-                          doctor.phone,
+                          safeText(doctor.phone),
                           style: const TextStyle(color: Colors.black54),
                         ),
 
                         const SizedBox(height: 20),
 
-                        const Text("City",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "City",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 6),
                         Text(
-                          doctor.city,
+                          safeText(doctor.city),
                           style: const TextStyle(color: Colors.black54),
                         ),
 
@@ -175,7 +194,9 @@ class DoctorDetailScreen extends StatelessWidget {
                             child: const Text(
                               "Make An Appointment",
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -183,24 +204,27 @@ class DoctorDetailScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // ------------------------- LOCATION TAB -------------------------
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Clinic Address",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Clinic Address",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 6),
                         Text(
-                          doctor.address,
+                          safeText(doctor.address),
                           style: const TextStyle(color: Colors.black54),
                         ),
 
                         const SizedBox(height: 20),
 
-                        const Text("Location Map",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Location Map",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 12),
 
                         ClipRRect(
@@ -229,7 +253,9 @@ class DoctorDetailScreen extends StatelessWidget {
                             child: const Text(
                               "Make An Appointment",
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -237,11 +263,13 @@ class DoctorDetailScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // ------------------------- REVIEWS TAB -------------------------
                   const Center(
                     child: Text(
                       "No Reviews Yet",
-                      style: TextStyle(color: Colors.black54, fontSize: 16),
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],

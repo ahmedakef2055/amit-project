@@ -9,8 +9,8 @@ class Doctor {
   final String description;
   final String degree;
 
-  final String specialization; // أخذنا name فقط
-  final String city; // أخذنا name فقط
+  final String specialization; 
+  final String city;  
 
   final int price;
   final String startTime;

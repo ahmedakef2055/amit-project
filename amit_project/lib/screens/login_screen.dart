@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final auth = context.read<AuthService>();
       final result = await auth.login(email: email, password: password);
-      if (!mounted) return; // safety
+      if (!mounted) return; 
 
       if (result["status"] == true) {
         final token = result["data"]["token"];

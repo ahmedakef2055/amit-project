@@ -19,7 +19,6 @@ class OnboardingScreen extends StatelessWidget {
               Image.asset(
                 'assets/images/image.png', 
                 height: 280,
-                // 👆 هنا تحط صورة الدكتور
               ),
 
               const SizedBox(height: 25),

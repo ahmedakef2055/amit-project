@@ -15,7 +15,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final emailController = TextEditingController();
   final passController = TextEditingController();
   final passConfirmController = TextEditingController();
-  int? gender; // 0 = male, 1 = female
+  int? gender; 
 
   bool isLoading = false;
 
@@ -53,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         gender: gender!,
       );
 
-      if (!mounted) return; // safety after await
+      if (!mounted) return; 
 
       if (result["status"] == true) {
         messenger.showSnackBar(

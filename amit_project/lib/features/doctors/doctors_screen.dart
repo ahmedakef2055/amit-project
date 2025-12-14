@@ -4,6 +4,7 @@ import '../auth/auth_service.dart';
 import '../../models/doctor.dart';
 import '../../widgets/doctor_card.dart';
 import 'doctor_service.dart';
+import '../../screens/login_screen.dart';
 
 class DoctorsScreen extends StatefulWidget {
   const DoctorsScreen({super.key});
@@ -23,26 +24,37 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
   }
 
   Future<void> loadDoctors() async {
-  final auth = Provider.of<AuthService>(context, listen: false);
-  final token = await auth.getToken();
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final token = await auth.getToken();
 
-  print("📌 TOKEN FROM PROVIDER: $token");
+    print("📌 TOKEN FROM PROVIDER: $token");
 
-  if (token == null) {
-    print("❌ No token found");
-    setState(() => loading = false);
-    return;
+    if (token == null) {
+      print("❌ No token found");
+      setState(() => loading = false);
+      return;
+    }
+
+    final result = await DoctorService.getAllDoctors(token);
+
+    setState(() {
+      doctors = result
+          .whereType<Map<String, dynamic>>()
+          .map((e) => Doctor.fromJson(e))
+          .toList();
+      loading = false;
+    });
   }
 
-  final result = await DoctorService.getAllDoctors();
+  Future<void> _handleLogout() async {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    await auth.logout();
 
-  setState(() {
-    doctors = result;
-    loading = false;
-  });
-}
-
-
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +62,12 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
       appBar: AppBar(
         title: const Text("Doctors"),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())

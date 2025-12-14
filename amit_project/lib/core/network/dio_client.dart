@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../../features/auth/auth_service.dart';
+import '../global/global.dart';
 import 'api.dart';
+import 'package:provider/provider.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
@@ -13,10 +16,9 @@ class DioClient {
     dio = Dio(
       BaseOptions(
         baseUrl: Api.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
         headers: {
-          "Accept": "application/json",
           "Content-Type": "application/json",
         },
       ),
@@ -25,30 +27,34 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // هات التوكن بشكل مباشر
-          final token = await AuthService().getToken();
+          try {
+            final context = navigatorKey.currentContext;
 
-          if (token != null && token.isNotEmpty) {
-            options.headers["Authorization"] = "Bearer $token";
-            if (kDebugMode) print("🔐 USING TOKEN: $token");
-          } else {
-            if (kDebugMode) print("❌ NO TOKEN FOUND");
+            if (context != null) {
+              final auth = Provider.of<AuthService>(context, listen: false);
+              final token = await auth.getToken();
+
+              if (token != null && token.isNotEmpty) {
+                options.headers["Authorization"] = "Bearer $token";
+                print("🔐 USING TOKEN: $token");
+              } else {
+                print("⚠️ NO TOKEN FOUND");
+              }
+            }
+          } catch (e) {
+            print("⚠️ TOKEN READ ERROR: $e");
           }
 
           return handler.next(options);
         },
 
         onResponse: (response, handler) {
-          if (kDebugMode) {
-            print("📥 RESPONSE: ${response.data}");
-          }
+          print("📥 RESPONSE: ${response.data}");
           return handler.next(response);
         },
 
-        onError: (DioException e, handler) {
-          if (kDebugMode) {
-            print("❌ ERROR: ${e.response?.data}");
-          }
+        onError: (e, handler) {
+          print("❌ ERROR: ${e.response?.data}");
           return handler.next(e);
         },
       ),

@@ -60,7 +60,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // 👇 هنا هنربط Reset Password API بعدين
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

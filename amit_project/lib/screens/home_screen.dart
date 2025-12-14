@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../features/auth/auth_service.dart';
 import 'recommendation_doctor_screen.dart';
 import 'search_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -10,20 +12,19 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(context),
 
       floatingActionButton: FloatingActionButton(
-  elevation: 5,
-  shape: const CircleBorder(),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const SearchScreen()),
-    );
-  },
-  child: const Icon(Icons.search, size: 30),
-),
-
+        elevation: 5,
+        shape: const CircleBorder(),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SearchScreen()),
+          );
+        },
+        child: const Icon(Icons.search, size: 30),
+      ),
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -34,7 +35,6 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // HEADER
               Row(
                 children: [
                   Column(
@@ -59,7 +59,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const Spacer(),
 
-                  // Notification only
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -73,7 +72,6 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // BLUE BANNER
               Container(
                 width: double.infinity,
                 height: 200,
@@ -106,10 +104,6 @@ class HomeScreen extends StatelessWidget {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
                             ),
                             child: const Text(
                               "Find Nearby",
@@ -119,8 +113,6 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    // EXACT FIGMA SIZE IMAGE
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -139,7 +131,6 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // SPECIALITIES TITLE
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
@@ -175,7 +166,6 @@ class HomeScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // RECOMMENDATION HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -187,13 +177,16 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  /// 🔥 SEE ALL WITH NAVIGATION
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final auth = AuthService();
+                      final token = await auth.getToken() ?? '';
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const RecommendationDoctorScreen(),
+                          builder: (_) =>
+                              RecommendationDoctorScreen(token: token),
                         ),
                       );
                     },
@@ -235,8 +228,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------- SPECIALITY ITEM
-  Widget _specialityItem(String img, String title) {
+  static Widget _specialityItem(String img, String title) {
     return Column(
       children: [
         Container(
@@ -248,20 +240,16 @@ class HomeScreen extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Image.asset(img, fit: BoxFit.contain),
+            child: Image.asset(img),
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 13),
-        )
+        Text(title, style: const TextStyle(fontSize: 13)),
       ],
     );
   }
 
-  // ----------------------------- DOCTOR CARD
-  Widget _doctorCard({
+  static Widget _doctorCard({
     required String name,
     required String subtitle,
     required String rating,
@@ -280,59 +268,44 @@ class HomeScreen extends StatelessWidget {
             width: 80,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade300,
               image: DecorationImage(
                 image: AssetImage(image),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-
           const SizedBox(width: 15),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(name,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                  ),
-                ),
+                Text(subtitle,
+                    style: const TextStyle(color: Colors.black54)),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 18),
                     const SizedBox(width: 4),
-                    Text(
-                      rating,
-                      style: const TextStyle(fontSize: 13),
-                    ),
+                    Text(rating,
+                        style: const TextStyle(fontSize: 13)),
                   ],
-                )
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  // ----------------------------- BOTTOM NAV BAR
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(BuildContext context) {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
-      elevation: 10,
       child: SizedBox(
         height: 65,
         child: Row(
@@ -341,12 +314,22 @@ class HomeScreen extends StatelessWidget {
             const Icon(Icons.home_filled, size: 28),
             const Icon(Icons.chat_bubble_outline, size: 26),
             const SizedBox(width: 40),
-
             const Icon(Icons.calendar_month, size: 26),
 
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: AssetImage("assets/images/Group 637.png"),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileScreen(),
+                  ),
+                );
+              },
+              child: const CircleAvatar(
+                radius: 16,
+                backgroundImage:
+                    AssetImage("assets/images/Group 637.png"),
+              ),
             ),
           ],
         ),

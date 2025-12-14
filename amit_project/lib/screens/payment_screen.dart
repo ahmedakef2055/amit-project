@@ -1,143 +1,110 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../features/appointment/appointment_provider.dart';
+import 'summary_screen.dart';
 
-class PaymentScreen extends StatefulWidget {
-  final DateTime date;
-  final String time;
-  final String visitType;
-
-  const PaymentScreen({
-    super.key,
-    required this.date,
-    required this.time,
-    required this.visitType,
-  });
-
-  @override
-  State<PaymentScreen> createState() => _PaymentScreenState();
-}
-
-class _PaymentScreenState extends State<PaymentScreen> {
-  String selectedMethod = "Wallet";
+class PaymentScreen extends StatelessWidget {
+  const PaymentScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+    final appointment = context.watch<AppointmentProvider>();
 
+    return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "Payment",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-        ),
+        title: const Text("Payment"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------- APPOINTMENT SUMMARY ----------------
-            const Text(
-              "Appointment Summary",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
-            const SizedBox(height: 15),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    height: 70,
-                    width: 70,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      image: const DecorationImage(
-                        image: AssetImage("assets/images/gh.png"),
-                        fit: BoxFit.cover,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Payment Option",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Dr. Randy Wigham",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            )),
-                        const SizedBox(height: 4),
-                        const Text("General | RSUD Gatot Subroto",
-                            style: TextStyle(color: Colors.black54)),
-                        const SizedBox(height: 8),
-                        Text(
-                          "${widget.time} | ${widget.date.day}/${widget.date.month}/${widget.date.year}",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(widget.visitType,
-                            style: const TextStyle(color: Colors.black45)),
-                      ],
+                    const SizedBox(height: 20),
+
+                    _paymentCard(
+                      context: context,
+                      value: "card",
+                      groupValue: appointment.paymentMethod,
+                      title: "Credit Card",
+                      subtitle: "Master Card / Visa",
+                      icon: Icons.credit_card,
+                      onChanged: appointment.setPaymentMethod,
                     ),
-                  )
-                ],
+
+                    const SizedBox(height: 14),
+
+                    _paymentCard(
+                      context: context,
+                      value: "paypal",
+                      groupValue: appointment.paymentMethod,
+                      title: "Paypal",
+                      subtitle: "Pay via PayPal account",
+                      icon: Icons.account_balance_wallet,
+                      onChanged: appointment.setPaymentMethod,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    _paymentCard(
+                      context: context,
+                      value: "cash",
+                      groupValue: appointment.paymentMethod,
+                      title: "Cash",
+                      subtitle: "Pay at clinic",
+                      icon: Icons.money,
+                      onChanged: appointment.setPaymentMethod,
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 30),
-
-            // ---------------- PAYMENT METHOD ----------------
-            const Text(
-              "Payment Method",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
-            const SizedBox(height: 15),
-
-            _paymentOption("Wallet", Icons.account_balance_wallet_outlined),
-            const SizedBox(height: 12),
-
-            _paymentOption("Credit / Debit Card", Icons.credit_card),
-            const SizedBox(height: 12),
-
-            _paymentOption("Cash", Icons.money),
-
-            const Spacer(),
-
-            // ---------------- CONFIRM BUTTON ----------------
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PaymentSuccessScreen(),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff3FA2F7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff3FA2F7),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                child: const Text(
-                  "Confirm & Pay",
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  onPressed: appointment.paymentMethod == null
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SummaryScreen(),
+                            ),
+                          );
+                        },
+                  child: const Text(
+                    "Continue",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -147,84 +114,69 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // ---------------------------- WIDGET: Payment Option ----------------------------
-  Widget _paymentOption(String label, IconData icon) {
-    final bool active = selectedMethod == label;
+  Widget _paymentCard({
+    required BuildContext context,
+    required String value,
+    required String? groupValue,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Function(String) onChanged,
+  }) {
+    final selected = value == groupValue;
 
     return GestureDetector(
-      onTap: () {
-        setState(() => selectedMethod = label);
-      },
+      onTap: () => onChanged(value),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: active ? const Color(0xffE8F4FF) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: active ? const Color(0xff3FA2F7) : Colors.black12,
-            width: active ? 2 : 1,
+            color: selected
+                ? const Color(0xff3FA2F7)
+                : Colors.grey.shade300,
+            width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 28, color: active ? const Color(0xff3FA2F7) : Colors.black54),
-            const SizedBox(width: 12),
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade50,
+              child: Icon(icon, color: const Color(0xff3FA2F7)),
+            ),
+
+            const SizedBox(width: 15),
+
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            Container(
-              height: 22,
-              width: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                    color: active ? const Color(0xff3FA2F7) : Colors.black26,
-                    width: 2),
-                color: active ? const Color(0xff3FA2F7) : Colors.transparent,
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------- PAYMENT SUCCESS (FINAL SCREEN) ----------------------------
-class PaymentSuccessScreen extends StatelessWidget {
-  const PaymentSuccessScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, size: 120, color: Colors.green),
-            const SizedBox(height: 20),
-            const Text(
-              "Payment Successful!",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Radio<String>(
+              value: value,
+              groupValue: groupValue,
+              activeColor: const Color(0xff3FA2F7),
+              onChanged: (v) => onChanged(v!),
             ),
-            const SizedBox(height: 12),
-            const Text("Your appointment is confirmed.",
-                style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 30),
-
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Back to Home"),
-            )
           ],
         ),
       ),
